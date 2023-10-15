@@ -1,6 +1,4 @@
 #include <iostream>
-#include <vector>
-#include <string>
 #include <thread>
 #include <chrono>
 
@@ -9,35 +7,32 @@ constexpr auto PI = 3.14159265;
 void blogDonut(int dfd, int d_hole, float t_space, float p_space, float A, float B);
 void renderDonut(int donut_hole, int r2, float t_inc, float p_inc, float A, float B);
 
-// Heavily inspired by:
+// This program is based off of the explanation given here.
 // https://www.a1k0n.net/2011/07/20/donut-math.html
-
-float max_lumi = -100;
-float min_lumi = 100;
+// blogDonut is my attempt at replicating the donut using the math provided
+// renderDonut is my attempt at replicating the donut without using the math provided
 
 int main()
 {
-    //
+    // donut params
     int donut_hole = 6;
     int dist_from_donut = 4;
 
-    //constants for donut rendering
-    //const float t_inc = 0.02, p_inc = 0.08;
-    const float t_inc = 0.2, p_inc = 0.2;
-    //angle of spin around x axis
+    // constants for donut rendering
+    const float t_inc = 0.02, p_inc = 0.08;
+    // angle of spin around x axis
     float A = 0;
-    //angle of spin around y axis
+    // angle of spin around y axis
     float B = 0.5;
-
-    renderDonut(donut_hole, dist_from_donut, t_inc, p_inc, A, B);
 
     while(true)
     {
-        //renderDonut(donut_hole, dist_from_donut, t_inc, p_inc, A, B);
+        renderDonut(donut_hole, dist_from_donut, t_inc, p_inc, A, B);
 
         A += 0.07;
         B += 0.02;
 
+        // waits for specified timeframe
         using namespace std::chrono_literals;
         std::this_thread::sleep_for(16ms);
     }
@@ -45,6 +40,7 @@ int main()
     return 0;
 }
 
+// My attempt at replicating the blog's implementation
 void blogDonut(int dfd, int d_hole, float t_space, float p_space, float A, float B)
 {
     char chars[40][189] = {};
@@ -89,28 +85,28 @@ void blogDonut(int dfd, int d_hole, float t_space, float p_space, float A, float
     fwrite(pt, 1, 7560, stderr);
 }
 
-// my own implementation.
+// my own implementation of the donut
 void renderDonut(int donut_hole, int r2, float t_inc, float p_inc, float A, float B)
 {
     char chars[40][189] = {};
     memset(&chars[0], ' ', 7560);
     float zbuffer[40][189] = { {0} };
 
-    // Precomputed values
+    // precomputed values
     float sinA = sin(A), sinB = sin(B);
     float cosA = cos(A), cosB = cos(B);
     // Distance between "screen" and viewer. Scales 2d-projected coordinates.
     const float k1 = 189 * 25 * 3 / (8 * (r2 + donut_hole));
-    // Adds distance between "screen" and donut
+    // adds distance between "screen" and donut
     const float k2 = 50;
 
-    // Outlines large circle shape
+    // outlines large circle shape
     for (float theta = 0; theta < 2 * PI; theta += t_inc)
     {
-        // Precomputed values
+        // precomputed values
         float sintheta = sin(theta), costheta = cos(theta);
 
-        // Calculates current point on large circle
+        // calculates current point on large circle
         float large_x = donut_hole * costheta;
         float large_y = donut_hole * sintheta;
         
@@ -120,15 +116,12 @@ void renderDonut(int donut_hole, int r2, float t_inc, float p_inc, float A, floa
             // Precomputed values
             float sinphi = sin(phi), cosphi = cos(phi);
 
-            /*float offsetMg = r2 * cosphi;
-            float xOffset = offsetMg * costheta;
-            float yOffset = offsetMg * sintheta;*/
-
-            // Gets current point on donut by adding radius (at an angle) to current coordinate
-            // (r2 * cosphi) represents the magnitude of displacement from the current point on the large donut circle
-            // multiplying 
+            // gets x & y points of donut by adding smaller circle's radius (at an angle) to current coordinate
+            // (r2 * cosphi) represents total horizontal displacement (x and y are both horizontal for this circle)
+            // multiplying (r2 * cosphi) by sintheta or costheta gives x or y displacement respectively
             float x = large_x + r2 * cosphi * costheta;
             float y = large_y + r2 * cosphi * sintheta;
+            // z is vertical displacement from current coordinate
             float z = r2 * sinphi;
 
             // x, y, z after being plugged into rotation matrices for rotation around x and y axes
@@ -137,15 +130,13 @@ void renderDonut(int donut_hole, int r2, float t_inc, float p_inc, float A, floa
             float rotatedZ = (sinA * y + cosA * z) * cosB - x * sinB + k2;
             float ooz = 1 / rotatedZ;
 
-            std::cout << "(" << rotatedX << ", " << rotatedY << ", " << rotatedZ << ")\n";
-
-            // Projects donut onto 2D "screen" k2 units away from viewer
+            // projects donut onto 2D "screen" k2 units away from viewer
             int xp = (int)(rotatedX * k1 * ooz + 190 / 2);
             int yp = (int)((rotatedY * k1 * ooz + 84 / 2) / 2.1);
 
             if (0 < xp && 189 > xp && 0 < yp && 40 > yp && zbuffer[yp][xp] < ooz)
             {
-                // Luminance scales off point's distance from screen
+                // luminance scales off point's distance from screen
                 float dist_from_screen = sqrt(pow(rotatedX, 2) + pow(rotatedY, 2) + pow(rotatedZ, 2));
                 float luminance = 3.16 - (dist_from_screen / 17);
 
