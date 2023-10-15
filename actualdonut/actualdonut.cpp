@@ -4,7 +4,7 @@
 
 constexpr auto PI = 3.14159265;
 
-void blogDonut(int dfd, int d_hole, float t_space, float p_space, float A, float B);
+void blogDonut(int d_hole, int dfd, float t_space, float p_space, float A, float B);
 void renderDonut(int donut_hole, int r2, float t_inc, float p_inc, float A, float B);
 
 // This program is based off of the explanation given here.
@@ -34,14 +34,14 @@ int main()
 
         // waits for specified timeframe
         using namespace std::chrono_literals;
-        std::this_thread::sleep_for(16ms);
+        std::this_thread::sleep_for(5ms);
     }
 
     return 0;
 }
 
 // My attempt at replicating the blog's implementation
-void blogDonut(int dfd, int d_hole, float t_space, float p_space, float A, float B)
+void blogDonut(int d_hole, int dfd, float t_space, float p_space, float A, float B)
 {
     char chars[40][189] = {};
     memset(&chars[0], ' ', 7560);
